@@ -33,6 +33,7 @@ function _update()
     end
     if fget(mget(flr((plr.x+4)/8),flr((plr.y+4)/8)),0)==true and plr.gas<100 then
         plr.gas+=10
+        sfx(2)
     end
     if plr.gas>100 then
         plr.gas=100
