@@ -3,7 +3,7 @@ version 42
 __lua__
 
 function _init()
-    p={
+    plr={
         sp=1,
         x=63,
         y=63,
@@ -21,90 +21,114 @@ function _init()
     vroom=true
     vcd=30
 end
- 
+    
 function _update()
     update_health()
     vrooming()
-    controller()
-    if fget(mget(flr((p.x+10)/8),flr((p.y+4)/8)),1)==true   then
-        p.speed=1.2
+    controller(plr)
+    if fget(mget(flr((plr.x+4)/8),flr((plr.y+4)/8)),1)==true   then
+        plr.speed=1.2
     else
-        p.speed=1
+        plr.speed=1
     end
-    if fget(mget(flr((p.x+10)/8),flr((p.y+4)/8)),0)==true and p.gas<100 then
-        p.gas+=10
+    if fget(mget(flr((plr.x+4)/8),flr((plr.y+4)/8)),0)==true and plr.gas<100 then
+        plr.gas+=10
     end
-    if p.gas>100 then
-        p.gas=100
+    if plr.gas>100 then
+        plr.gas=100
     end
 end
 
 function _draw()
     cls(3)
+    map(0)
     draw_health()
-    map(1)
-    spr(p.sp,p.x,p.y,1,1,p.fx,p.fy)
+    spr(plr.sp,plr.x,plr.y,1,1,plr.fx,plr.fy)
     print("carworld",1,1,6)
     print("will you stay on the road",0,110,6)
     print("or blaze your own trail")
-    print(flr(p.gas), 115,10,0)
+    print(flr(plr.gas), 115,10,0)
 end
 
 --new functions below
 
 
 
-function controller()
+function controller(plr) -- player movement
     if btn(5) then
         sfx(1)
     end
+    local lx=plr.x -- last x pos
+    local ly=plr.y -- last y pos 
+    
     if btn(1) or btn(2) or btn(3) or btn(0) then
         if btn(1) then --right
-            p.x+=p.speed*p.velocity/2
-            p.fx=false
-            p.fy=false
-            p.sp=1
-            p.driving=true
-            p.lastdir=1
+            plr.x+=plr.speed*plr.velocity/2
+            plr.fx=false
+            plr.fy=false
+            plr.sp=1
+            plr.driving=true
+            plr.lastdir=1
+            if collide(plr) then
+                plr.x=lx
+            end
         end
         if btn(0) then --left
-            p.x-=p.speed*p.velocity/2
-            p.fx=true
-            p.fy=false
-            p.sp=1
-            p.driving=true
-            p.lastdir=0
+            plr.x-=plr.speed*plr.velocity/2
+            plr.fx=true
+            plr.fy=false
+            plr.sp=1
+            plr.driving=true
+            plr.lastdir=0
+            if collide(plr) then
+                plr.x=lx
+            end
         end
         if btn(2) then --up
-            p.y-=p.speed*p.velocity/2
-            p.sp=2
-            p.fy=false
-            p.driving=true
-            p.lastdir=2
+            plr.y-=plr.speed*plr.velocity/2
+            plr.sp=2
+            plr.fy=false
+            plr.driving=true
+            plr.lastdir=2
+            if collide(plr) then
+                plr.y=ly
+            end
         end
         if btn(3) then --down
-            p.y+=p.speed*p.velocity/2
-            p.sp=2
-            p.fy=true
-            p.driving=true
-            p.lastdir=3
+            plr.y+=plr.speed*plr.velocity/2
+            plr.sp=2
+            plr.fy=true
+            plr.driving=true
+            plr.lastdir=3
+            if collide(plr) then
+                plr.y=ly
+            end
         end
     else 
-        p.driving=false
-        if p.lastdir==1 and p.velocity>0 then
-            p.x+=1*p.velocity/2
-        elseif p.lastdir==0 and p.velocity>0 then
-            p.x-=1*p.velocity/2
-        elseif p.lastdir==2 and p.velocity>0 then
-            p.y-=1*p.velocity/2
-        elseif p.lastdir==3 and p.velocity>0 then
-            p.y+=1*p.velocity/2
+        plr.driving=false
+        if plr.lastdir==1 and plr.velocity>0 then
+            plr.x+=1*plr.velocity/2
+        elseif plr.lastdir==0 and plr.velocity>0 then
+            plr.x-=1*plr.velocity/2
+        elseif plr.lastdir==2 and plr.velocity>0 then
+            plr.y-=1*plr.velocity/2
+        elseif plr.lastdir==3 and plr.velocity>0 then
+            plr.y+=1*plr.velocity/2
+        end
+        if collide(plr) then
+            plr.x=lx
+            plr.y=ly
         end
     end
-    if p.driving==true and p.velocity<4 then
-        p.velocity+=.5
-    elseif p.driving==false and p.velocity>0 then
-        p.velocity-=.3
+    if plr.driving==true and plr.velocity<4 then
+        plr.velocity+=.5
+    elseif plr.driving==false and plr.velocity>0 then
+        plr.velocity-=.3
+    end
+    if plr.x<0 then
+        plr.x=lx
+    elseif plr.y<0 then
+        plr.y=ly
     end
 end
 
@@ -115,19 +139,41 @@ function vrooming()
     if vcd==0 then
         vroom=true
     end
-    if vroom==true and p.driving==true then
+    if vroom==true and plr.driving==true then
         sfx(0)
         vroom=false
         vcd=30
     end
 end
 
+function collide(plr)
+    collision={
+        x1=0,
+        x2=0,
+        y1=0,
+        y2=0
+    }
+        collision.x1=(plr.x+1)/8
+        collision.y1=(plr.y+1)/8
+        collision.x2=(plr.x+6)/8
+        collision.y2=(plr.y+7)/8
+
+        local A=fget(mget(collision.x1,collision.y1),2)
+        local B=fget(mget(collision.x1,collision.y2),2)
+        local C=fget(mget(collision.x2,collision.y2),2)
+        local D=fget(mget(collision.x2,collision.y1),2)
+    if A or B or C or D then
+    return true
+    else
+    return false
+    end
+end
 
 function update_health()
-    if p.driving==true then
-        p.gas-=.1
+    if plr.driving==true then
+        plr.gas-=.1
     end
-    bar.gas=41*p.gas/100
+    bar.gas=41*plr.gas/100
 end
 
 function draw_health()
